@@ -1,0 +1,31 @@
+[package]
+name = "tests"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[dev-dependencies]
+base64 = { version = "0.13.0", default-features = false, features = ["alloc"] }
+contract = { package = "casper-contract", version="1.3.2" }
+types = { package = "casper-types", version="1.3.2" }
+engine-test-support = { package = "casper-engine-test-support", version="1.3.2" }
+erc20 = { package ="casper-erc20", version="0.1.0" }
+ed25519-dalek = "1.0.1"
+hex = "0.4.3"
+renvm-sig = "0.1.1"
+
+[[bin]]
+name = "integration-tests"
+path = "src/integration_tests.rs"
+
+[features]
+default = [
+  "erc20/std", 
+  "contract/std", 
+  "types/std", 
+  "engine-test-support/test-support", 
+  "contract/test-support"
+]

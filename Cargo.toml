@@ -1,0 +1,9 @@
+[workspace]
+
+members = [
+  "casper-contract-eip-1337",
+  "tests"
+]
+
+[profile.release]
+lto = true
