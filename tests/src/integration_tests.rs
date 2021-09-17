@@ -452,7 +452,6 @@ mod tests {
         /*let balance_uref: Key = s.query_contract_erc20(BALANCES_KEY_NAME).unwrap();
 
         // Check that hte owner has 1000 tokens
-        */
         let bytes_from = erc_20_admin.to_bytes().unwrap();
         let user_from_b64 = base64::encode(&bytes_from);
 
@@ -460,7 +459,7 @@ mod tests {
         let balance_from: U256 = s.query_dictionary_value_erc20(
             &BALANCES_KEY_NAME.to_string(), 
             &user_from_b64,        ).unwrap();
-        assert_eq!(balance_from, U256::from(1000)); 
+        assert_eq!(balance_from, U256::from(1000)); */
 
         // Give the spender contract permission to spend 1000 tokens
         s.call_erc_20(
