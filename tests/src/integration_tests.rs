@@ -8,22 +8,10 @@ mod tests {
         Code, Hash, SessionBuilder, TestContext, TestContextBuilder
     };
     
-    use types::{
-        CLTyped, 
-        ContractHash, 
-        Key, 
-        PublicKey, 
-        RuntimeArgs, 
-        SecretKey, 
-        U256, 
-        U512, 
-        account::AccountHash, 
-        bytesrepr::{
+    use types::{CLTyped, ContractHash, ContractPackageHash, Key, PublicKey, RuntimeArgs, SecretKey, U256, U512, account::AccountHash, bytesrepr::{
             FromBytes, 
             ToBytes
-        }, 
-        runtime_args
-    };
+        }, runtime_args};
 
     use erc20::{
         constants::{
@@ -103,7 +91,7 @@ mod tests {
         context: TestContext,
         pub eip_1337_admin: AccountHash,
         pub eip_1337_admin_pk: PublicKey,
-        pub eip_1337_contract_hash: ContractHash,
+        pub eip_1337_contract_hash: ContractPackageHash,
         pub erc_20_admin: AccountHash,
         pub erc_20_admin_pk: PublicKey,
         pub erc_20_contract_hash: ContractHash,
@@ -193,7 +181,7 @@ mod tests {
 
             context.run(session);
 
-            let contract_hash: Hash = context
+            let contract_package_hash: Hash = context
                 .query(
                     admin_addr,
                     &["casper-contract-eip-1337-latest-version-contract-hash".to_string()],
@@ -206,7 +194,7 @@ mod tests {
                 context,
                 eip_1337_admin: admin_addr,
                 eip_1337_admin_pk: admin_key.clone(),
-                eip_1337_contract_hash: ContractHash::from(contract_hash),
+                eip_1337_contract_hash: ContractPackageHash::from(contract_package_hash),
                 erc_20_admin: erc_20_admin_addr,
                 erc_20_admin_pk: erc_20_admin_key,
                 erc_20_contract_hash,
@@ -295,7 +283,7 @@ mod tests {
                 Some(dict_name.to_string()),
                 key.to_string(),
             ) {
-                Err(err) => panic!(err),
+                Err(err) => panic!("{:?}", err),
                 Ok(maybe_value) => {
                     let value: T = maybe_value
                         .into_t()
@@ -452,7 +440,7 @@ mod tests {
         /*let balance_uref: Key = s.query_contract_erc20(BALANCES_KEY_NAME).unwrap();*/
 
         // Check that hte owner has 1000 tokens
-        let bytes_from = erc_20_admin.to_bytes().unwrap();
+        let bytes_from = Key::Account(erc_20_admin).to_bytes().unwrap();
         let user_from_b64 = base64::encode(&bytes_from);
 
         println!("DICT {} {}", BALANCES_KEY_NAME.to_string(), user_from_b64);
@@ -493,7 +481,7 @@ mod tests {
 
         // Generate a subscription hash in test
         let mut subscription_bytes = [0u8;32];
-        hex::decode_to_slice(subscription_hash.clone(), &mut subscription_bytes as &mut [u8]);
+        hex::decode_to_slice(subscription_hash.clone(), &mut subscription_bytes as &mut [u8]).unwrap();
 
         let sub_data = get_subscription_data(user_from, user_to, U256::from(TOKEN_AMOUNT_VALUE), PERIOD_SECONDS_VALUE);
         let sub_bytes = get_hash_bytes(sub_data);
