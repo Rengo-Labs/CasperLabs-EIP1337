@@ -1,4 +1,6 @@
 language: rust
+rust:
+  - nightly
 script:
-  - cd tests && cargo build
-  - cd tests && cargo test
+  - make prepare
+  - make test
