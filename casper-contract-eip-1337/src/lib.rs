@@ -516,7 +516,7 @@ pub fn install_or_upgrade_contract(
                          
                 named_keys.insert(constants::TO.to_string(), storage::new_uref(to).into());
                 named_keys.insert(constants::TOKEN_AMOUNT.to_string(), storage::new_uref(token_amount).into());
-                named_keys.insert(constants::PERIOD_SECONDS.to_string(), storage::new_uref(period_seconds * 1000).into());
+                named_keys.insert(constants::PERIOD_SECONDS.to_string(), storage::new_uref(period_seconds).into());
                 named_keys.insert(constants::ERC20_CONTRACT_HASH.to_string(), storage::new_uref(erc20_contract_hash).into());
 
                 // Add empty dictionary for hashes.

@@ -63,9 +63,7 @@ mod tests {
     const SIGNATURE: &str = "signature"; //the Signature
     const NEXT_VALID_TIMESTAMP: &str= "next_valid_timestamp"; 
 
-    const PERIOD_SECONDS_VALUE: u64 = 0;
-
-     pub fn generate_eip_1337_secret_key() -> SecretKey {
+    pub fn generate_eip_1337_secret_key() -> SecretKey {
         SecretKey::ed25519_from_bytes([1u8; 32]).unwrap()
     }
 
@@ -103,7 +101,7 @@ mod tests {
 
     impl Subscription {
 
-        pub fn deployment() -> Subscription {
+        pub fn deployment(period_seconds: u64) -> Subscription {
 
             // Create EIP 1337 contract admin.
             let admin_secret = generate_eip_1337_secret_key();
@@ -121,7 +119,7 @@ mod tests {
             let user_addr = AccountHash::from(&user_key);
 
             // Create user.
-            let user_secret_2 = SecretKey::ed25519_from_bytes([4u8; 32]).unwrap();
+            let user_secret_2 = SecretKey::ed25519_from_bytes([5u8; 32]).unwrap();
             let user_key_2: PublicKey = (&user_secret_2).into();
             let user_addr_2 = AccountHash::from(&user_key_2);
 
@@ -168,9 +166,9 @@ mod tests {
             let session_code = Code::from("casper-contract-eip-1337.wasm");
             
             let session_args = runtime_args! {
-                TO => user_addr,
+                TO => user_addr_2,
                 TOKEN_AMOUNT => U256::from(TOKEN_AMOUNT_VALUE),
-                PERIOD_SECONDS => PERIOD_SECONDS_VALUE,
+                PERIOD_SECONDS => period_seconds,
                 ERC20_CONTRACT_HASH => erc_20_contract_hash.to_formatted_string(),
             };
 
@@ -283,7 +281,7 @@ mod tests {
                 Some(dict_name.to_string()),
                 key.to_string(),
             ) {
-                Err(err) => panic!("{:?}", err),
+                Err(_) => None,
                 Ok(maybe_value) => {
                     let value: T = maybe_value
                         .into_t()
@@ -408,17 +406,17 @@ mod tests {
 
     #[test]
     fn test_eip1337_deploy() {
-        let s = Subscription::deployment();
+        let s = Subscription::deployment(1000);
         assert_eq!(s.to(), s.user_to);
         assert_eq!(s.token_amount(), U256::from(TOKEN_AMOUNT_VALUE));
-        assert_eq!(s.period_seconds(), PERIOD_SECONDS_VALUE);
+        assert_eq!(s.period_seconds(), 1000);
 
         //panic!("AccountHash: {}",s.user);
     }
 
     #[test]
     fn test_execute_subscription() {
-        let mut s = Subscription::deployment();
+        let mut s = Subscription::deployment(0);
         let user_from = s.user_from;
         let user_to = s.user_to;
         let erc_20_admin = s.erc_20_admin;
@@ -439,15 +437,32 @@ mod tests {
         // TODO: Fix this once we have a simpler way of querying balances
         /*let balance_uref: Key = s.query_contract_erc20(BALANCES_KEY_NAME).unwrap();*/
 
-        // Check that hte owner has 1000 tokens
-        let bytes_from = Key::Account(erc_20_admin).to_bytes().unwrap();
+        // Check that the owner has sent 1000 tokens
+        let admin_bytes = Key::Account(erc_20_admin).to_bytes().unwrap();
+        let admin_b64 = base64::encode(&admin_bytes);
+
+        let admin_balance: U256 = s.query_dictionary_value_erc20(
+            &BALANCES_KEY_NAME.to_string(), 
+            &admin_b64        ).unwrap();
+        assert_eq!(admin_balance, U256::from(999999000));
+
+        // Check that the contract sender from has 1000 tokens
+        let bytes_from = Key::Account(user_from).to_bytes().unwrap();
         let user_from_b64 = base64::encode(&bytes_from);
 
-        println!("DICT {} {}", BALANCES_KEY_NAME.to_string(), user_from_b64);
         let balance_from: U256 = s.query_dictionary_value_erc20(
             &BALANCES_KEY_NAME.to_string(), 
             &user_from_b64,        ).unwrap();
         assert_eq!(balance_from, U256::from(1000));
+
+        // Check that the contract receiver from has 0 tokens
+        /*let bytes_to = Key::Account(user_to).to_bytes().unwrap();
+        let user_to_b64 = base64::encode(&bytes_to);
+
+        let balance_to: U256 = s.query_dictionary_value_erc20(
+            &BALANCES_KEY_NAME.to_string(), 
+            &user_to_b64,        ).unwrap();
+        assert_eq!(balance_to, U256::from(0)); */
 
         // Give the spender contract permission to spend 1000 tokens
         s.call_erc_20(
@@ -483,7 +498,7 @@ mod tests {
         let mut subscription_bytes = [0u8;32];
         hex::decode_to_slice(subscription_hash.clone(), &mut subscription_bytes as &mut [u8]).unwrap();
 
-        let sub_data = get_subscription_data(user_from, user_to, U256::from(TOKEN_AMOUNT_VALUE), PERIOD_SECONDS_VALUE);
+        let sub_data = get_subscription_data(user_from, user_to, U256::from(TOKEN_AMOUNT_VALUE), 0);
         let sub_bytes = get_hash_bytes(sub_data);
         let sub_hex = get_hex(sub_bytes);
 
@@ -515,26 +530,28 @@ mod tests {
             signature, 
             user_from,
         );
-        
-        // TODO: Fix this once we have a simpler way of querying balances
-        /* // Check final balances
-        let bytes_from2 = user_from.to_bytes().unwrap();
-        let user_from_b642 = base64::encode(&bytes_from2);
-        let balance_from2: U256 = s.query_dictionary_value_erc20(
-            BALANCES_KEY_NAME, 
-            &user_from_b642,
-        ).unwrap();
-        
-        assert_eq!(balance_from2, U256::from(999));
 
-        let bytes_to = user_to.to_bytes().unwrap();
+        // Check that the mint is okay
+        let admin_balance2: U256 = s.query_dictionary_value_erc20(
+            &BALANCES_KEY_NAME.to_string(), 
+            &admin_b64        ).unwrap();
+        assert_eq!(admin_balance2, U256::from(999999000));
+
+        // Check that the owner has sent 1 token
+        let balance_from2: U256 = s.query_dictionary_value_erc20(
+            &BALANCES_KEY_NAME.to_string(), 
+            &user_from_b64,        ).unwrap();
+        assert_eq!(balance_from2, U256::from(1000 - TOKEN_AMOUNT_VALUE));
+
+        // Check that the contract sender from has 1 token 
+        let bytes_to = Key::Account(user_to).to_bytes().unwrap();
         let user_to_b64 = base64::encode(&bytes_to);
-        let balance_to: U256 = s.query_dictionary_value_erc20(
-            BALANCES_KEY_NAME, 
-            &user_to_b64,
-        ).unwrap(); 
-    
-        assert_eq!(balance_to, U256::from(1)); */
+ 
+        let balance_to2: U256 = s.query_dictionary_value_erc20(
+            &BALANCES_KEY_NAME.to_string(), 
+            &user_to_b64,        ).unwrap();
+        assert_eq!(balance_to2, U256::from(TOKEN_AMOUNT_VALUE));
+
     }
 /*
     #[test]
