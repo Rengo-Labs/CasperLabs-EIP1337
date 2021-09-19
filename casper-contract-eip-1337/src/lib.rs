@@ -148,6 +148,9 @@ pub fn get_subscription_hash()
     }
 }
 
+// TODO: Remove this in 1.4
+
+///
 /// Given the subscription details, generate eip-191 standard hash, external interface, do not return (use this until text is fixed).
 /// # Parameters
 ///
