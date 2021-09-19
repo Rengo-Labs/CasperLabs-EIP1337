@@ -329,7 +329,7 @@ pub fn is_subscription_ready()
 }
 
 ///  Execute the transferFrom to pay the publisher from the subscriber, 
-///  the subscriber has full control by approving this contract an allowance.
+///  the subscriber has full control by approving this contract hash an allowance.
 /// 
 /// # Parameters
 ///

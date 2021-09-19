@@ -55,7 +55,7 @@ mod tests {
     const TO: &str = "to"; //the publisher
     const FROM: &str = "from_"; //the subscriber
     const TOKEN_AMOUNT: &str = "token_amount"; //the token amount paid to the publisher
-    const TOKEN_AMOUNT_VALUE: u64 = 1;
+    const TOKEN_AMOUNT_VALUE: u64 = 10;
     const PERIOD_SECONDS: &str = "period_seconds"; //the period in seconds between payments
     const GRACE_PERIOD_SECONDS: &str = "grace_period_seconds"; //the grace_period in seconds for is_subscription_active
   
@@ -404,6 +404,7 @@ mod tests {
         }
     }
 
+    // Deploy Test
     #[test]
     fn test_eip1337_deploy() {
         let s = Subscription::deployment(1000);
@@ -411,9 +412,9 @@ mod tests {
         assert_eq!(s.token_amount(), U256::from(TOKEN_AMOUNT_VALUE));
         assert_eq!(s.period_seconds(), 1000);
 
-        //panic!("AccountHash: {}",s.user);
     }
 
+    // Defacto Success Test
     #[test]
     fn test_execute_subscription() {
         let mut s = Subscription::deployment(0);
@@ -434,9 +435,6 @@ mod tests {
             },
         );
 
-        // TODO: Fix this once we have a simpler way of querying balances
-        /*let balance_uref: Key = s.query_contract_erc20(BALANCES_KEY_NAME).unwrap();*/
-
         // Check that the owner has sent 1000 tokens
         let admin_bytes = Key::Account(erc_20_admin).to_bytes().unwrap();
         let admin_b64 = base64::encode(&admin_bytes);
@@ -454,15 +452,6 @@ mod tests {
             &BALANCES_KEY_NAME.to_string(), 
             &user_from_b64,        ).unwrap();
         assert_eq!(balance_from, U256::from(1000));
-
-        // Check that the contract receiver from has 0 tokens
-        /*let bytes_to = Key::Account(user_to).to_bytes().unwrap();
-        let user_to_b64 = base64::encode(&bytes_to);
-
-        let balance_to: U256 = s.query_dictionary_value_erc20(
-            &BALANCES_KEY_NAME.to_string(), 
-            &user_to_b64,        ).unwrap();
-        assert_eq!(balance_to, U256::from(0)); */
 
         // Give the spender contract permission to spend 1000 tokens
         s.call_erc_20(
@@ -553,30 +542,450 @@ mod tests {
         assert_eq!(balance_to2, U256::from(TOKEN_AMOUNT_VALUE));
 
     }
-/*
+
+    // Fail without approval
     #[test]
-    fn test_is_subscription_ready() {
-        let mut s = Subscription::deployment();
-        let from_value:AccountHash=AccountHash::from_formatted_str(FROM_ACCOUNT_HASH).unwrap();
-        s.is_subscription_ready(Sender(s.user_to),PUBLIC_VALUE.to_string(),SIGNATURE_VALUE.to_string(),from_value);
+    #[should_panic]
+    fn test_execute_subscription_no_approval() {
+        let mut s = Subscription::deployment(0);
+        let user_from = s.user_from;
+        let user_to = s.user_to;
+        let erc_20_admin = s.erc_20_admin;
+        let eip_1337_admin = s.eip_1337_admin;
+        let eip_1337_admin_pk = s.eip_1337_admin_pk.clone();
+        let eip_1337_contract_hash = s.eip_1337_contract_hash.clone();
+
+        // Give the owner 1000 tokens
+        s.call_erc_20(
+            &erc_20_admin, 
+            TRANSFER_ENTRY_POINT_NAME, 
+            runtime_args! {
+                RECIPIENT_RUNTIME_ARG_NAME => Address::Account(user_from.clone()),
+                AMOUNT_RUNTIME_ARG_NAME => U256::from(1000),
+            },
+        );
+
+        // Generate a subscription hash in contract
+        let subscription_hash = s.get_subscription_hash(
+            eip_1337_admin,
+            user_from,
+        );
+
+        // Generate a subscription hash in test
+        let mut subscription_bytes = [0u8;32];
+        hex::decode_to_slice(subscription_hash.clone(), &mut subscription_bytes as &mut [u8]).unwrap();
+
+        let sub_data = get_subscription_data(user_from, user_to, U256::from(TOKEN_AMOUNT_VALUE), 0);
+        let sub_bytes = get_hash_bytes(sub_data);
+        let sub_hex = get_hex(sub_bytes);
+
+        // Check if the subscription hashes match
+        println!("SUB_HASH {} == {}", subscription_hash.clone(), sub_hex);
+        assert_eq!(subscription_hash, sub_hex);
+        assert_eq!(subscription_bytes, sub_bytes);
+
+        // Sign the subscription hash 
+        let signature = sign(
+            generate_eip_1337_secret_key(),
+            subscription_bytes,
+        );
+
+        // Use the signed subscription hash to execute a payment of 1 token
+        s.execute_subscription(
+            eip_1337_admin,
+            eip_1337_admin_pk,
+            signature, 
+            user_from,
+        );
 
     }
 
+    // Insufficient allowance
     #[test]
-    fn test_is_subscription_active() {
-        let mut s = Subscription::deployment();
-        let grace_period_seconds:u64=300;
-        s.is_subscription_active(Sender(s.user_to),SUBSCRIPTION_HASH_VALUE.to_string(),grace_period_seconds);
+    #[should_panic]
+    fn test_execute_subscription_insufficient_allowance() {
+        let mut s = Subscription::deployment(0);
+        let user_from = s.user_from;
+        let user_to = s.user_to;
+        let erc_20_admin = s.erc_20_admin;
+        let eip_1337_admin = s.eip_1337_admin;
+        let eip_1337_admin_pk = s.eip_1337_admin_pk.clone();
+        let eip_1337_contract_hash = s.eip_1337_contract_hash.clone();
+
+        // Give the owner 1000 tokens
+        s.call_erc_20(
+            &erc_20_admin, 
+            TRANSFER_ENTRY_POINT_NAME, 
+            runtime_args! {
+                RECIPIENT_RUNTIME_ARG_NAME => Address::Account(user_from.clone()),
+                AMOUNT_RUNTIME_ARG_NAME => U256::from(1000),
+            },
+        );
+
+        // Give the spender contract permission to spend 1000 tokens
+        s.call_erc_20(
+            &user_from.clone(), 
+            APPROVE_ENTRY_POINT_NAME, 
+            runtime_args! {
+                SPENDER_RUNTIME_ARG_NAME => Address::Contract(eip_1337_contract_hash.clone()),
+                AMOUNT_RUNTIME_ARG_NAME => U256::from(1),
+            },
+        );
+
+    /*     // Check the approval of the spender contract
+        let mut preimage = Vec::new();
+        preimage.append(&mut user_from.to_bytes().unwrap_or_revert());
+        preimage.append(&mut eip_1337_admin.to_bytes().unwrap_or_revert());
+
+        let key_bytes = runtime::blake2b(&preimage);
+        let key_hex = hex::encode(&key_bytes);
+
+        let allowance: U256 = s.query_dictionary_value_erc20(ALLOWANCES_KEY_NAME, &key_hex).unwrap();
+
+        // Check that allowance is 1000 tokens
+        println!("ALLOWACE OF OWNER {} TO SPENDER {} IS {}", user_from.to_string(), eip_1337_admin.to_string(), allowance);
+        assert_eq!(allowance, U256::from(1000)); */
+
+        // Generate a subscription hash in contract
+        let subscription_hash = s.get_subscription_hash(
+            eip_1337_admin,
+            user_from,
+        );
+
+        // Generate a subscription hash in test
+        let mut subscription_bytes = [0u8;32];
+        hex::decode_to_slice(subscription_hash.clone(), &mut subscription_bytes as &mut [u8]).unwrap();
+
+        let sub_data = get_subscription_data(user_from, user_to, U256::from(TOKEN_AMOUNT_VALUE), 0);
+        let sub_bytes = get_hash_bytes(sub_data);
+        let sub_hex = get_hex(sub_bytes);
+
+        // Check if the subscription hashes match
+        println!("SUB_HASH {} == {}", subscription_hash.clone(), sub_hex);
+        assert_eq!(subscription_hash, sub_hex);
+        assert_eq!(subscription_bytes, sub_bytes);
+
+        // Sign the subscription hash 
+        let signature = sign(
+            generate_eip_1337_secret_key(),
+            subscription_bytes,
+        );
+
+        // Use the signed subscription hash to execute a payment of 1 token
+        s.execute_subscription(
+            eip_1337_admin,
+            eip_1337_admin_pk,
+            signature, 
+            user_from,
+        );
+
     }
 
+    // Bad Hash
     #[test]
-    fn test_cancel_subscription() {
-        let mut s = Subscription::deployment();
-        let from_value:AccountHash=AccountHash::from_formatted_str(FROM_ACCOUNT_HASH).unwrap();
-        s.cancel_subscription(Sender(s.user_to),PUBLIC_VALUE.to_string(),SIGNATURE_VALUE.to_string(),from_value);
-        assert_eq!(s.next_valid_timestamp(),99999999999*1000);
+    #[should_panic]
+    fn test_execute_subscription_bad_hash() {
+        let mut s = Subscription::deployment(0);
+        let user_from = s.user_from;
+        let user_to = s.user_to;
+        let erc_20_admin = s.erc_20_admin;
+        let eip_1337_admin = s.eip_1337_admin;
+        let eip_1337_admin_pk = s.eip_1337_admin_pk.clone();
+        let eip_1337_contract_hash = s.eip_1337_contract_hash.clone();
 
-    }*/
+        // Give the owner 1000 tokens
+        s.call_erc_20(
+            &erc_20_admin, 
+            TRANSFER_ENTRY_POINT_NAME, 
+            runtime_args! {
+                RECIPIENT_RUNTIME_ARG_NAME => Address::Account(user_from.clone()),
+                AMOUNT_RUNTIME_ARG_NAME => U256::from(1000),
+            },
+        );
+
+        // Give the spender contract permission to spend 1000 tokens
+        s.call_erc_20(
+            &user_from.clone(), 
+            APPROVE_ENTRY_POINT_NAME, 
+            runtime_args! {
+                SPENDER_RUNTIME_ARG_NAME => Address::Contract(eip_1337_contract_hash.clone()),
+                AMOUNT_RUNTIME_ARG_NAME => U256::from(1000),
+            },
+        );
+
+        // Generate a subscription hash in contract
+        let sub_data = get_subscription_data(user_from, user_to, U256::from(TOKEN_AMOUNT_VALUE*10), 0);
+        let sub_bytes = get_hash_bytes(sub_data);
+        let sub_hex = get_hex(sub_bytes);
+
+        // Sign the subscription hash 
+        let signature = sign(
+            generate_eip_1337_secret_key(),
+            sub_bytes,
+        );
+
+        // Use the signed subscription hash to execute a payment of 1 token
+        s.execute_subscription(
+            eip_1337_admin,
+            eip_1337_admin_pk,
+            signature, 
+            user_from,
+        );
+
+    }
+
+    // Not yet ready
+    #[test]
+    #[should_panic]
+    fn test_execute_subscription_not_ready() {
+        let mut s = Subscription::deployment(100000);
+        let user_from = s.user_from;
+        let user_to = s.user_to;
+        let erc_20_admin = s.erc_20_admin;
+        let eip_1337_admin = s.eip_1337_admin;
+        let eip_1337_admin_pk = s.eip_1337_admin_pk.clone();
+        let eip_1337_contract_hash = s.eip_1337_contract_hash.clone();
+
+        // Give the owner 1000 tokens
+        s.call_erc_20(
+            &erc_20_admin, 
+            TRANSFER_ENTRY_POINT_NAME, 
+            runtime_args! {
+                RECIPIENT_RUNTIME_ARG_NAME => Address::Account(user_from.clone()),
+                AMOUNT_RUNTIME_ARG_NAME => U256::from(1000),
+            },
+        );
+
+        // Give the spender contract permission to spend 1000 tokens
+        s.call_erc_20(
+            &user_from.clone(), 
+            APPROVE_ENTRY_POINT_NAME, 
+            runtime_args! {
+                SPENDER_RUNTIME_ARG_NAME => Address::Contract(eip_1337_contract_hash.clone()),
+                AMOUNT_RUNTIME_ARG_NAME => U256::from(1000),
+            },
+        );
+
+        // Generate a subscription hash in contract
+        let subscription_hash = s.get_subscription_hash(
+            eip_1337_admin,
+            user_from,
+        );
+
+        // Generate a subscription hash in test
+        let mut subscription_bytes = [0u8;32];
+        hex::decode_to_slice(subscription_hash.clone(), &mut subscription_bytes as &mut [u8]).unwrap();
+
+        let sub_data = get_subscription_data(user_from, user_to, U256::from(TOKEN_AMOUNT_VALUE), 0);
+        let sub_bytes = get_hash_bytes(sub_data);
+        let sub_hex = get_hex(sub_bytes);
+
+        // Check if the subscription hashes match
+        println!("SUB_HASH {} == {}", subscription_hash.clone(), sub_hex);
+        assert_eq!(subscription_hash, sub_hex);
+        assert_eq!(subscription_bytes, sub_bytes);
+
+        // Sign the subscription hash 
+        let signature = sign(
+            generate_eip_1337_secret_key(),
+            subscription_bytes,
+        );
+
+        // Use the signed subscription hash to execute a payment of 1 token
+        s.execute_subscription(
+            eip_1337_admin,
+            eip_1337_admin_pk,
+            signature, 
+            user_from,
+        );
+
+    }
+
+    // Repeat Success Test
+    #[test]
+    fn test_execute_subscription_repeatable() {
+        let mut s = Subscription::deployment(0);
+        let user_from = s.user_from;
+        let user_to = s.user_to;
+        let erc_20_admin = s.erc_20_admin;
+        let eip_1337_admin = s.eip_1337_admin;
+        let eip_1337_admin_pk = s.eip_1337_admin_pk.clone();
+        let eip_1337_contract_hash = s.eip_1337_contract_hash.clone();
+
+        // Give the owner 1000 tokens
+        s.call_erc_20(
+            &erc_20_admin, 
+            TRANSFER_ENTRY_POINT_NAME, 
+            runtime_args! {
+                RECIPIENT_RUNTIME_ARG_NAME => Address::Account(user_from.clone()),
+                AMOUNT_RUNTIME_ARG_NAME => U256::from(1000),
+            },
+        );
+
+        // Give the spender contract permission to spend 1000 tokens
+        s.call_erc_20(
+            &user_from.clone(), 
+            APPROVE_ENTRY_POINT_NAME, 
+            runtime_args! {
+                SPENDER_RUNTIME_ARG_NAME => Address::Contract(eip_1337_contract_hash.clone()),
+                AMOUNT_RUNTIME_ARG_NAME => U256::from(1000),
+            },
+        );
+
+        // Generate a subscription hash in contract
+        let subscription_hash = s.get_subscription_hash(
+            eip_1337_admin,
+            user_from,
+        );
+
+        // Generate a subscription hash in test
+        let mut subscription_bytes = [0u8;32];
+        hex::decode_to_slice(subscription_hash.clone(), &mut subscription_bytes as &mut [u8]).unwrap();
+
+        let sub_data = get_subscription_data(user_from, user_to, U256::from(TOKEN_AMOUNT_VALUE), 0);
+        let sub_bytes = get_hash_bytes(sub_data);
+        let sub_hex = get_hex(sub_bytes);
+
+        // Check if the subscription hashes match
+        println!("SUB_HASH {} == {}", subscription_hash.clone(), sub_hex);
+        assert_eq!(subscription_hash, sub_hex);
+        assert_eq!(subscription_bytes, sub_bytes);
+
+        // Sign the subscription hash 
+        let signature = sign(
+            generate_eip_1337_secret_key(),
+            subscription_bytes,
+        );
+
+        // TODO: This won't work well unless we can get the contract hash into the contract scope
+
+/*      // Use the signed subscription hash to check if the allowance is >= 1 token and that the transaction can execute
+        s.is_subscription_ready(
+            eip_1337_admin,
+            eip_1337_admin_pk.clone(),
+            signature.clone(), 
+            user_from,
+        );  */
+
+        // Use the signed subscription hash to execute a payment of 1 token
+        s.execute_subscription(
+            eip_1337_admin,
+            eip_1337_admin_pk.clone(),
+            signature.clone(), 
+            user_from,
+        );
+
+        // Use the signed subscription hash to execute a payment of 1 token
+        s.execute_subscription(
+            eip_1337_admin,
+            eip_1337_admin_pk,
+            signature, 
+            user_from,
+        );
+
+        // Check that the mint is okay
+        let admin_bytes = Key::Account(erc_20_admin).to_bytes().unwrap();
+        let admin_b64 = base64::encode(&admin_bytes);
+
+        let admin_balance2: U256 = s.query_dictionary_value_erc20(
+            &BALANCES_KEY_NAME.to_string(), 
+            &admin_b64        ).unwrap();
+        assert_eq!(admin_balance2, U256::from(999999000));
+
+        // Check that the owner has sent 1 token        
+        let bytes_from = Key::Account(user_from).to_bytes().unwrap();
+        let user_from_b64 = base64::encode(&bytes_from);
+
+        let balance_from2: U256 = s.query_dictionary_value_erc20(
+            &BALANCES_KEY_NAME.to_string(), 
+            &user_from_b64,        ).unwrap();
+        assert_eq!(balance_from2, U256::from(1000 - TOKEN_AMOUNT_VALUE * 2));
+
+        // Check that the contract sender from has 1 token 
+        let bytes_to = Key::Account(user_to).to_bytes().unwrap();
+        let user_to_b64 = base64::encode(&bytes_to);
+ 
+        let balance_to2: U256 = s.query_dictionary_value_erc20(
+            &BALANCES_KEY_NAME.to_string(), 
+            &user_to_b64,        ).unwrap();
+        assert_eq!(balance_to2, U256::from(TOKEN_AMOUNT_VALUE * 2));
+
+    }
+
+    // Cancellation Test
+    #[test]
+    #[should_panic]
+    fn test_execute_subscription_cancellation() {
+        let mut s = Subscription::deployment(0);
+        let user_from = s.user_from;
+        let user_to = s.user_to;
+        let erc_20_admin = s.erc_20_admin;
+        let eip_1337_admin = s.eip_1337_admin;
+        let eip_1337_admin_pk = s.eip_1337_admin_pk.clone();
+        let eip_1337_contract_hash = s.eip_1337_contract_hash.clone();
+
+        // Give the owner 1000 tokens
+        s.call_erc_20(
+            &erc_20_admin, 
+            TRANSFER_ENTRY_POINT_NAME, 
+            runtime_args! {
+                RECIPIENT_RUNTIME_ARG_NAME => Address::Account(user_from.clone()),
+                AMOUNT_RUNTIME_ARG_NAME => U256::from(1000),
+            },
+        );
+
+        // Give the spender contract permission to spend 1000 tokens
+        s.call_erc_20(
+            &user_from.clone(), 
+            APPROVE_ENTRY_POINT_NAME, 
+            runtime_args! {
+                SPENDER_RUNTIME_ARG_NAME => Address::Contract(eip_1337_contract_hash.clone()),
+                AMOUNT_RUNTIME_ARG_NAME => U256::from(1000),
+            },
+        );
+
+        // Generate a subscription hash in contract
+        let subscription_hash = s.get_subscription_hash(
+            eip_1337_admin,
+            user_from,
+        );
+
+        // Sign the subscription hash 
+        let signature = sign(
+            generate_eip_1337_secret_key(),
+            subscription_bytes,
+        );
+
+        // Use the signed subscription hash to execute a payment of 1 token
+        s.execute_subscription(
+            eip_1337_admin,
+            eip_1337_admin_pk.clone(),
+            signature.clone(), 
+            user_from,
+        );
+
+        // Cancel subscription
+        s.cancel_subscription(
+            eip_1337_admin,
+            eip_1337_admin_pk.clone(),
+            signature.clone(), 
+            user_from,
+        );
+
+        // Use the signed subscription hash to execute a payment of 1 token
+        s.execute_subscription(
+            eip_1337_admin,
+            eip_1337_admin_pk,
+            signature, 
+            user_from,
+        );
+
+    }
+
+    // TODO: 1.4 tests once return values are supported:
+    // is_subscription_active tests
+    // is_subscription_ready tests
+
 }
 
 fn main() {
