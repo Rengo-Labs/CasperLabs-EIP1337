@@ -50,7 +50,7 @@ $ casper-client keygen contract-keys
 In this example, we will deploy to testnet.
 
 ```bash
-casper-client put-deploy 
+casper-client put-deploy \
   --chain-name casper-test \
   --node-address <NODE_ADDRESS> \
   --secret-key contract-keys/secret_key.pem \
@@ -74,9 +74,14 @@ A successful response will look like:
 Once the network has received the deployment, it will queue up in the system before being listed in a block for execution. Sending a transaction (deployment) to the network does not mean that the transaction processed successfully. Therefore, it’s important to check to see that the contract executed properly, and that the block was finalized.
 
 ```bash
-$ casper-client get-deploy --chain-name < casper-test> --node-address http://<HOST:PORT> <DEPLOY_HASH>
+$ casper-client get-deploy --node-address http://<HOST:PORT> <DEPLOY_HASH>
 ```
 
+Depending on your preference, it may be more convenient to just go to the cspr.live block explorer though after a minute or so:
+
+```
+https://testnet.cspr.live/deploy/<DEPLOY_HASH>
+```
 
 # How to Deploy and call functions of the eip 1337 contract
 ```bash
