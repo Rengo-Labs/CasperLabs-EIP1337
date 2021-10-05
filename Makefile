@@ -8,6 +8,7 @@ test-only:
 	cargo test -p tests
 
 copy-wasm-file-to-test:
+	mkdir -p tests/wasm
 	cp target/wasm32-unknown-unknown/release/*.wasm tests/wasm
 	cp tests/erc-20-wasm/erc-20-e973bb5.wasm tests/wasm/erc-20.wasm
 
