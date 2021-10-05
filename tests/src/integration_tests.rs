@@ -16,11 +16,10 @@ mod tests {
     use erc20::{
         constants::{
             AMOUNT_RUNTIME_ARG_NAME, 
-            OWNER_RUNTIME_ARG_NAME,
             SPENDER_RUNTIME_ARG_NAME,
             RECIPIENT_RUNTIME_ARG_NAME,
         },
-        Address, Error, ERC20,
+        Address,
     };
 
 /*     use contract::{
@@ -949,6 +948,10 @@ mod tests {
             eip_1337_admin,
             user_from,
         );
+
+        // Generate a subscription hash in test
+        let mut subscription_bytes = [0u8;32];
+        hex::decode_to_slice(subscription_hash.clone(), &mut subscription_bytes as &mut [u8]).unwrap();
 
         // Sign the subscription hash 
         let signature = sign(
