@@ -1,29 +1,86 @@
-# CasperLabs EIP 1337
+# Casper EIP 1337 Subscription Billing Standard
 
-Token Subscription for the CasperLabs platform.
+EIP 1337 subscription billing standard implemented for the Casper Blockchain.  
 
-## Install
-Make sure `wasm32-unknown-unknown` is installed.
+First, [deploy this contract](#how-to-deploy) by providing an [ERC20](https://github.com/casper-ecosystem/erc20) contract address, your receiving account address, token amount, and subscription period.  
+
+Then, have the sending user permit this contract to transfer tokens on their behalf up to the total amount agreed upon and [generate a subscription hash](#getting-a-subscription-hash) to send you.  
+
+Finally, sign the subscription hash with the private key of your receiving account and call [execute-subscription](#getting-paid) after the allotted subscription period has passed until the total amount of tokens is transferred.
+
+## Setting Up This Contract
+
+### Requirements
+
+1. Install the [rust environment and casper client](https://docs.casperlabs.io/en/latest/.dapp-dev-guide/setup-of-rust-contract-sdk.html)
+
+2. Clone this repo and navigate into the folder.
+  ```bash
+  $ git clone https://github.com/davidtai/casper-eip-1337.git
+  ```
+
+3. The address of the ERC20 compatible contract that you want to use.
+
+4. A receiving Casper account.  An easy way to set one up is using the [Casperlabs Signer](https://docs.cspr.community/docs/user-guides/SignerGuide.html).
+
+### Set up the Rust toolchain
+You need the Rust toolchain to develop smart contracts. Make sure `wasm32-unknown-unknown` is installed.
 ```bash
 $ make prepare
 ```
 
-## Build Smart Contract
+### Build Smart Contract
 ```bash
 $ make build-contract
 ```
 
-## Test
+### Test
 Test logic and smart contract.
 ```bash
 $ make test
 ```
 
+### Generate Contract Private Keys
+
+```bash
+$ casper-client keygen contract-keys 
+```
+
+### Deploy onto Casper Testnet/Mainnet
+In this example, we will deploy to testnet.
+
+```bash
+casper-client put-deploy 
+  --chain-name casper-test \
+  --node-address <NODE_ADDRESS> \
+  --secret-key contract-keys/secret_key.pem \
+  --session-path target/wasm32-unknown-unknown/release/contract.wasm \
+  --payment-amount 13500000000 \
+  --session-arg="to:account_hash='<YOUR_RECEIVING_ACCOUNT_HASH>'" \
+  --session-arg="token_amount:U256='<AMOUNT>'" \
+  --session-arg="period_seconds:u64='<PERIOD_SECONDS>'" \
+  --session-arg="erc20_contract_hash:string='<ERC20_CONTRACT_ADDRESS>" \
+  /
+```
+
+A successful response will look like:
+```json
+{
+  "api_version":"1.0.0",
+  "deploy_hash":"8c3068850354c2788c1664ac6a275ee575c8823676b4308851b7b3e1fe4e3dcc"
+}
+```
+
+Once the network has received the deployment, it will queue up in the system before being listed in a block for execution. Sending a transaction (deployment) to the network does not mean that the transaction processed successfully. Therefore, it’s important to check to see that the contract executed properly, and that the block was finalized.
+
+```bash
+$ casper-client get-deploy --chain-name < casper-test> --node-address http://<HOST:PORT> <DEPLOY_HASH>
+```
+
+
 # How to Deploy and call functions of the eip 1337 contract
 ```bash
-
 Read commandsfordeployment file in the root directory of eip 1337 project 
-
 ```
 
 # ExecuteSubscription Flow
