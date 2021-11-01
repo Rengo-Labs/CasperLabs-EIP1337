@@ -83,10 +83,23 @@ Depending on your preference, it may be more convenient to just go to the cspr.l
 https://testnet.cspr.live/deploy/<DEPLOY_HASH>
 ```
 
-# How to Deploy and call functions of the eip 1337 contract
+### Allow the Contract Access to the Sender's ERC20 Balance
+
 ```bash
 Read commandsfordeployment file in the root directory of eip 1337 project 
 ```
+
+### Generate and Sign a Subscription Hash
+
+Use the contract to generate a subscription hash:
+
+```bash
+```
+
+### 
+
+
+
 
 # ExecuteSubscription Flow
 ```bash
