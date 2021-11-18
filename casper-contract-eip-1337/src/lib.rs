@@ -1,5 +1,3 @@
-use renvm_sig::hash_message;
-
 use contract::{
     contract_api::{runtime, storage},
     unwrap_or_revert::UnwrapOrRevert 
@@ -84,27 +82,27 @@ pub fn get_subscription_data(from:AccountHash) -> String
     format!("{}_{}_{}_{}",to,from,token_amount,period_seconds)
 }
 
-/// Given the subscription details, generate eip-191 standard hash, internal implementation.
+/// Given the subscription details, generate blake2b standard hash, internal implementation.
 /// # Parameters
 ///
 /// * `data` - A string slice that holds the meta transaction data
 ///
 pub fn get_subscription_hash_bytes(data:String) -> [u8; 32]
 {
-    hash_message(data)
+    runtime::blake2b(data)
 }
 
-/// Given the subscription details, generate eip-191 standard hash, internal implementation.
+/// Given the subscription details, generate blake2b standard hash, internal implementation.
 /// # Parameters
 ///
 /// * `data` - A string slice that holds the meta transaction data
 ///
 pub fn _get_subscription_hash(data:String) -> String
 {
-    let eip191_standard_hash= get_subscription_hash_bytes(data);
-    let eip191_standard_hash_string = hex::encode(eip191_standard_hash);
+    let blake2b_standard_hash= get_subscription_hash_bytes(data);
+    let blake2b_standard_hash_string = hex::encode(blake2b_standard_hash);
     
-    eip191_standard_hash_string
+    blake2b_standard_hash_string
 }
 
 /// Given the subscription details, generate eip-191 standard hash, external interface.
@@ -198,15 +196,15 @@ pub fn create_subscription_hash()
 ///
 /// * `signature` - A string slice that holds the signature of the meta transaction,  Subscriber have to get it from running cryptoxide project externally.
 /// 
-/// * `get_eip191_standard_hash` - A u8 array that holds the eip-191 standard subcription hash of the meta transaction
+/// * `get_blake2b_standard_hash` - A u8 array that holds the eip-191 standard subcription hash of the meta transaction
 /// 
-pub fn get_subscription_signer_and_verification(public_key:PublicKey,signature:Signature,eip191_hash_bytes:[u8;32]) -> bool
+pub fn get_subscription_signer_and_verification(public_key:PublicKey,signature:Signature,blake2b_hash_bytes:[u8;32]) -> bool
 {
     if let PublicKey::Ed25519(pub_key) = public_key 
     {
         if let Signature::Ed25519(sig) = signature 
         {
-            pub_key.verify_strict(&eip191_hash_bytes, &sig).unwrap();
+            pub_key.verify_strict(&blake2b_hash_bytes, &sig).unwrap();
             return true;
         }
     }
@@ -474,7 +472,7 @@ pub fn get_entry_points() -> EntryPoints {
     entry_points
 }
 
-/// Install or upgrade the contract.
+/// Install the contract.
 /// # Parameters
 ///
 /// * `name` - Contract name
@@ -495,7 +493,7 @@ pub fn install_or_upgrade_contract(
 ) {
     let mut named_keys: NamedKeys = Default::default();
     let contract_package_hash: ContractPackageHash =
-        match runtime::get_key(&format!("{}-package", name)) {
+         match runtime::get_key(&format!("{}-package", name)) {
             Some(contract_package_hash) => {
                 contract_package_hash.into_hash().unwrap_or_revert().into()
             }
@@ -533,21 +531,21 @@ pub fn install_or_upgrade_contract(
                 ); 
 
                 contract_package_hash
-            }
-        };
+        }
+    };
  
-        let entry_points = get_entry_points();
-        let (contract_hash, _) =
-            storage::add_contract_version(contract_package_hash, entry_points, named_keys);
-    
-        runtime::put_key(
-            &format!("{}-latest-version-contract", name),
-            contract_hash.into(),
-        );
-    
-        runtime::put_key(
-            &format!("{}-latest-version-contract-hash", name),
-            storage::new_uref(contract_hash).into(),
-        ); 
+    let entry_points = get_entry_points();
+    let (contract_hash, _) =
+        storage::add_contract_version(contract_package_hash, entry_points, named_keys);
+
+    runtime::put_key(
+        &format!("{}-latest-version-contract", name),
+        contract_hash.into(),
+    );
+
+    runtime::put_key(
+        &format!("{}-latest-version-contract-hash", name),
+        storage::new_uref(contract_hash).into(),
+    ); 
 }
 

@@ -185,7 +185,6 @@ This method **returns** nothing.
 Read commandsfordeployment file in the root directory of eip 1337 project 
 ```
 
-<<<<<<< HEAD
 ### Generate and Sign a Subscription Hash
 
 Use the contract to generate a subscription hash:

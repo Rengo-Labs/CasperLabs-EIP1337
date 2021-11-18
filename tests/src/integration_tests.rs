@@ -2,8 +2,6 @@ mod utils;
 
 #[cfg(test)]
 mod tests {
-    use renvm_sig::hash_message;
-
     use engine_test_support::{
         Code, Hash, SessionBuilder, TestContext, TestContextBuilder
     };
@@ -22,10 +20,8 @@ mod tests {
         Address,
     };
 
-/*     use contract::{
-        contract_api::{runtime},
-        unwrap_or_revert::UnwrapOrRevert,
-    }; */
+    use blake2::{VarBlake2b};
+    use blake2::digest::{Update, VariableOutput};
 
     use crate::utils::{sign};
 
@@ -77,7 +73,16 @@ mod tests {
 
     pub fn get_hash_bytes(data:String) -> [u8; 32]
     {
-        hash_message(data)
+        // create a Blake2b object
+        let mut hasher = VarBlake2b::new(32).unwrap();
+        hasher.update(data);
+
+        let mut real_res = [0u8;32];
+        let res = hasher.finalize_variable(|res| {
+            real_res.copy_from_slice(&res);    
+        });
+        
+        real_res
     }
 
     pub fn get_hex(bytes:[u8;32]) -> String {
@@ -492,8 +497,8 @@ mod tests {
 
         // Check if the subscription hashes match
         println!("SUB_HASH {} == {}", subscription_hash.clone(), sub_hex);
-        assert_eq!(subscription_hash, sub_hex);
         assert_eq!(subscription_bytes, sub_bytes);
+        assert_eq!(subscription_hash, sub_hex);
 
         // Sign the subscription hash 
         let signature = sign(
@@ -580,8 +585,8 @@ mod tests {
 
         // Check if the subscription hashes match
         println!("SUB_HASH {} == {}", subscription_hash.clone(), sub_hex);
-        assert_eq!(subscription_hash, sub_hex);
         assert_eq!(subscription_bytes, sub_bytes);
+        assert_eq!(subscription_hash, sub_hex);
 
         // Sign the subscription hash 
         let signature = sign(
