@@ -493,7 +493,6 @@ mod tests {
         let sub_hex = get_hex(sub_bytes);
 
         // Check if the subscription hashes match
-        println!("SUB_HASH {} == {}", subscription_hash.clone(), sub_hex);
         assert_eq!(subscription_bytes, sub_bytes);
         assert_eq!(subscription_hash, sub_hex);
 
@@ -581,7 +580,6 @@ mod tests {
         let sub_hex = get_hex(sub_bytes);
 
         // Check if the subscription hashes match
-        println!("SUB_HASH {} == {}", subscription_hash.clone(), sub_hex);
         assert_eq!(subscription_bytes, sub_bytes);
         assert_eq!(subscription_hash, sub_hex);
 
@@ -662,7 +660,6 @@ mod tests {
         let sub_hex = get_hex(sub_bytes);
 
         // Check if the subscription hashes match
-        println!("SUB_HASH {} == {}", subscription_hash.clone(), sub_hex);
         assert_eq!(subscription_hash, sub_hex);
         assert_eq!(subscription_bytes, sub_bytes);
 
@@ -781,7 +778,6 @@ mod tests {
         let sub_hex = get_hex(sub_bytes);
 
         // Check if the subscription hashes match
-        println!("SUB_HASH {} == {}", subscription_hash.clone(), sub_hex);
         assert_eq!(subscription_hash, sub_hex);
         assert_eq!(subscription_bytes, sub_bytes);
 
@@ -847,7 +843,6 @@ mod tests {
         let sub_hex = get_hex(sub_bytes);
 
         // Check if the subscription hashes match
-        println!("SUB_HASH {} == {}", subscription_hash.clone(), sub_hex);
         assert_eq!(subscription_hash, sub_hex);
         assert_eq!(subscription_bytes, sub_bytes);
 

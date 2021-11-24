@@ -6,9 +6,7 @@ use contract::{
 };
 
 use types::{
-    account::AccountHash,
     bytesrepr::{FromBytes, ToBytes},
-    system::CallStackElement,
     CLTyped,
 };
 

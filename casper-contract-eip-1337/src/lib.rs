@@ -136,7 +136,7 @@ pub fn get_subscription_hash()
             utils::set_key(&next_valid_timestamp_key,next_valid_timestamp); 
         
             match opt_public_key {
-                Some(public_key) => {
+                Some(_public_key) => {
                     runtime::ret(CLValue::from_t(hash).unwrap_or_revert());
                 },
                 // This should not be possible
@@ -178,10 +178,10 @@ pub fn create_subscription_hash()
 
     let hashes = Hashes::new();
 
-    let (opt_hash, opt_public_key) = hashes.get(from);
+    let (opt_hash, _opt_public_key) = hashes.get(from);
 
     match opt_hash {
-        Some(hash) => {
+        Some(_hash) => {
             runtime::revert(ApiError::User(ContractError::HashExists as u16));
         },
         None => {
@@ -288,7 +288,6 @@ pub fn is_subscription_ready()
     let signature:String = runtime::get_named_arg(constants::SIGNATURE);
     let from:AccountHash = runtime::get_named_arg(constants::FROM);
 
-    let to:AccountHash=utils::get_key(constants::TO).unwrap_or_revert();
     let token_amount:U256=utils::get_key(constants::TOKEN_AMOUNT).unwrap_or_revert();
 
     let hashes = Hashes::new();
@@ -550,7 +549,7 @@ pub fn install_or_upgrade_contract(
                 // Add empty dictionary for hashes.
                 let hashes_dict = storage::new_dictionary(hashes::HASHES_DICT).unwrap_or_revert();
                 named_keys.insert(hashes::HASHES_DICT.to_string(), hashes_dict.into());
-                
+
                 let pubkeys_dict = storage::new_dictionary(hashes::PUBKEYS_DICT).unwrap_or_revert();
                 named_keys.insert(hashes::PUBKEYS_DICT.to_string(), pubkeys_dict.into());
 

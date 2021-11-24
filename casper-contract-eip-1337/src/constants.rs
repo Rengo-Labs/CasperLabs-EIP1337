@@ -2,8 +2,6 @@
 pub const TO : &str="to"; 
 /// Key For the subscriber
 pub const FROM: &str= "from";
-/// KEY For data
-pub const DATA: &str="data";
 ///Key For the token amount paid to the publisher
 pub const TOKEN_AMOUNT: &str= "token_amount";
 ///Key For the period in seconds between payments

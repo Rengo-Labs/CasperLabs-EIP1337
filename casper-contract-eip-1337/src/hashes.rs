@@ -4,12 +4,13 @@ use contract::{
 };
 use types::{
     account::AccountHash,
-    crypto::{PublicKey, Signature},
+    crypto::{PublicKey},
     Key, URef,
 };
 
 pub const HASHES_DICT: &str = "hashes";
 pub const PUBKEYS_DICT: &str = "pubkeys";
+pub const PREFIX: &str = "account-hash-";
 
 pub struct Hashes {
     dict_uref: URef,
@@ -31,22 +32,31 @@ impl Hashes {
     }
 
     pub fn set(&self, account: AccountHash, hash: &str, public_key: PublicKey) {
-        storage::dictionary_put(self.dict_uref, &account.to_string(), hash);
-        storage::dictionary_put(self.pubkeys_dict_uref, &account.to_string(), public_key);
+        let key = &account.to_formatted_string().replace(PREFIX, "");
+
+        storage::dictionary_put(self.dict_uref, key, hash);
+        storage::dictionary_put(self.pubkeys_dict_uref, key, public_key);
     }
 
     pub fn delete(&self, account: AccountHash) {
-        storage::dictionary_put(self.dict_uref, &account.to_string(), "");
+        let key = &account.to_formatted_string().replace(PREFIX, "");
+
+        storage::dictionary_put(self.dict_uref, key, "");
+        storage::dictionary_put(self.pubkeys_dict_uref, key, "");
     }
 
     pub fn get(&self, account: AccountHash) -> (Option<String>, Option<PublicKey>) {
-        let hash: Option<String> = storage::dictionary_get(self.dict_uref, &account.to_string()).unwrap_or_revert();
-        let public_key: Option<PublicKey> = storage::dictionary_get(self.pubkeys_dict_uref, &account.to_string()).unwrap_or_revert();
+        let key = &account.to_formatted_string().replace(PREFIX, "");
+
+        let hash: Option<String> = storage::dictionary_get(self.dict_uref, key).unwrap_or_revert();
+        let public_key: Option<PublicKey> = storage::dictionary_get(self.pubkeys_dict_uref, key).unwrap_or_revert();
 
         (hash, public_key)
     }
 
     pub fn get_public_key(&self, account: AccountHash) -> Option<PublicKey> {
-        storage::dictionary_get(self.pubkeys_dict_uref, &account.to_string()).unwrap_or_revert()
+        let key = &account.to_formatted_string().replace(PREFIX, "");
+        
+        storage::dictionary_get(self.pubkeys_dict_uref, key).unwrap_or_revert()
     }
 }
