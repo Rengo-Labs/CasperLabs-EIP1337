@@ -316,8 +316,9 @@ mod tests {
         }
 
         pub fn get_subscription_hash(
-            &mut self,
-            caller: AccountHash,
+            &mut self,        
+            caller: AccountHash,   
+            public: PublicKey,
             from: AccountHash,
         ) -> String {
             
@@ -325,6 +326,7 @@ mod tests {
                 &caller,
                 "create_subscription_hash",
                 runtime_args! {
+                    "public" => public,
                     "from" => from,
                 },
             );
@@ -340,7 +342,6 @@ mod tests {
         pub fn execute_subscription(
             &mut self,
             caller: AccountHash,
-            public: PublicKey,
             signature: String,
             from: AccountHash,
         ) {
@@ -348,7 +349,6 @@ mod tests {
                 &caller,
                 "execute_subscription",
                 runtime_args! {
-                    "public" => public,
                     "signature" => signature,
                     "from" => from
                 },
@@ -358,7 +358,6 @@ mod tests {
         pub fn cancel_subscription(
             &mut self,
             caller: AccountHash,
-            public: PublicKey,
             signature: String,
             from: AccountHash,
         ) {
@@ -366,7 +365,6 @@ mod tests {
                 &caller,
                 "cancel_subscription",
                 runtime_args! {
-                    "public" => public,
                     "signature" => signature,
                     "from" => from
                 },
@@ -376,7 +374,6 @@ mod tests {
         pub fn is_subscription_ready(
             &mut self,
             caller: AccountHash,
-            public: PublicKey,
             signature: String,
             from: AccountHash,
         ) {
@@ -384,7 +381,6 @@ mod tests {
                 &caller,
                 "is_subscription_ready",
                 runtime_args! {
-                    "public" => public,
                     "signature" => signature,
                     "from" => from
                 },
@@ -484,6 +480,7 @@ mod tests {
         // Generate a subscription hash in contract
         let subscription_hash = s.get_subscription_hash(
             eip_1337_admin,
+            eip_1337_admin_pk,
             user_from,
         );
 
@@ -519,7 +516,6 @@ mod tests {
         // Use the signed subscription hash to execute a payment of 1 token
         s.execute_subscription(
             eip_1337_admin,
-            eip_1337_admin_pk,
             signature, 
             user_from,
         );
@@ -572,6 +568,7 @@ mod tests {
         // Generate a subscription hash in contract
         let subscription_hash = s.get_subscription_hash(
             eip_1337_admin,
+            eip_1337_admin_pk,
             user_from,
         );
 
@@ -597,7 +594,6 @@ mod tests {
         // Use the signed subscription hash to execute a payment of 1 token
         s.execute_subscription(
             eip_1337_admin,
-            eip_1337_admin_pk,
             signature, 
             user_from,
         );
@@ -653,6 +649,7 @@ mod tests {
         // Generate a subscription hash in contract
         let subscription_hash = s.get_subscription_hash(
             eip_1337_admin,
+            eip_1337_admin_pk,
             user_from,
         );
 
@@ -678,7 +675,6 @@ mod tests {
         // Use the signed subscription hash to execute a payment of 1 token
         s.execute_subscription(
             eip_1337_admin,
-            eip_1337_admin_pk,
             signature, 
             user_from,
         );
@@ -731,7 +727,6 @@ mod tests {
         // Use the signed subscription hash to execute a payment of 1 token
         s.execute_subscription(
             eip_1337_admin,
-            eip_1337_admin_pk,
             signature, 
             user_from,
         );
@@ -773,6 +768,7 @@ mod tests {
         // Generate a subscription hash in contract
         let subscription_hash = s.get_subscription_hash(
             eip_1337_admin,
+            eip_1337_admin_pk,
             user_from,
         );
 
@@ -798,7 +794,6 @@ mod tests {
         // Use the signed subscription hash to execute a payment of 1 token
         s.execute_subscription(
             eip_1337_admin,
-            eip_1337_admin_pk,
             signature, 
             user_from,
         );
@@ -839,6 +834,7 @@ mod tests {
         // Generate a subscription hash in contract
         let subscription_hash = s.get_subscription_hash(
             eip_1337_admin,
+            eip_1337_admin_pk,
             user_from,
         );
 
@@ -874,7 +870,6 @@ mod tests {
         // Use the signed subscription hash to execute a payment of 1 token
         s.execute_subscription(
             eip_1337_admin,
-            eip_1337_admin_pk.clone(),
             signature.clone(), 
             user_from,
         );
@@ -882,7 +877,6 @@ mod tests {
         // Use the signed subscription hash to execute a payment of 1 token
         s.execute_subscription(
             eip_1337_admin,
-            eip_1337_admin_pk,
             signature, 
             user_from,
         );
@@ -951,6 +945,7 @@ mod tests {
         // Generate a subscription hash in contract
         let subscription_hash = s.get_subscription_hash(
             eip_1337_admin,
+            eip_1337_admin_pk,
             user_from,
         );
 
@@ -967,7 +962,6 @@ mod tests {
         // Use the signed subscription hash to execute a payment of 1 token
         s.execute_subscription(
             eip_1337_admin,
-            eip_1337_admin_pk.clone(),
             signature.clone(), 
             user_from,
         );
@@ -975,7 +969,6 @@ mod tests {
         // Cancel subscription
         s.cancel_subscription(
             eip_1337_admin,
-            eip_1337_admin_pk.clone(),
             signature.clone(), 
             user_from,
         );
@@ -983,7 +976,6 @@ mod tests {
         // Use the signed subscription hash to execute a payment of 1 token
         s.execute_subscription(
             eip_1337_admin,
-            eip_1337_admin_pk,
             signature, 
             user_from,
         );
