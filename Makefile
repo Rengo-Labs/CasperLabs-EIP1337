@@ -3,6 +3,7 @@ prepare:
 
 build-contract:
 	cargo build --release -p casper-contract-eip-1337 --target wasm32-unknown-unknown
+	wasm-strip target/wasm32-unknown-unknown/release/*.wasm
 
 test-only:
 	cargo test -p tests
