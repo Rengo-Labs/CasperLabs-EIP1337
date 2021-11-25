@@ -68,7 +68,6 @@ pub fn from_der<T: AsRef<[u8]>>(input: T) -> Result<SecretKey, Error> {
           // Read the next value.
           let (tag, value) = derp::read_tag_and_get_value(input)?;
           if tag == Tag::Sequence as u8 {
-            println!("111 {:?}", tag);
               // Expecting an Ed25519 key.
               if version != 0 {
                   return Err(derp::Error::WrongValue);

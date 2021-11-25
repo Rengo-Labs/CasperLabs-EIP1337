@@ -37,7 +37,6 @@ pub fn sign(secret_key: SecretKey, message_bytes: [u8;32]) -> String {
 fn main() {
   let args: Vec<String> = env::args().collect();
   assert_eq!(args.len(), 3);
-  println!("{:?}", args);
 
   let message_key_str = &args[2];
   let mut message_bytes =  [0u8;32];
