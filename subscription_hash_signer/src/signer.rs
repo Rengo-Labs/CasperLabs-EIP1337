@@ -3,9 +3,11 @@ use ed25519_dalek::{
 };
 
 use types::{
-  SecretKey,
+  AsymmetricType, 
+  SecretKey, 
   crypto:: {
-    PublicKey
+    PublicKey,
+    Signature,
   },
 };
 
@@ -47,6 +49,26 @@ fn main() {
 
   let public_key: PublicKey = (&secret_key).into();
 
-  println!("Public Key {:?}", public_key.to_account_hash().to_formatted_string());
-  println!("Signature {:?}", sign(secret_key, message_bytes));
+  let signature_hex = sign(secret_key, message_bytes);
+
+  println!("Account Hash {:?}", public_key.to_account_hash().to_formatted_string());
+  println!("Public Key Hex {:?}", public_key.to_hex());
+  println!("Signature {:?}", signature_hex);
+
+  if let PublicKey::Ed25519(ed_public_key) = public_key {
+    let mut signature_bytes = [0u8;64];
+    hex::decode_to_slice(signature_hex, &mut signature_bytes as &mut [u8]).unwrap();
+
+    let signature = Signature::ed25519(signature_bytes).unwrap();
+    if let Signature::Ed25519(ed_signature) = signature 
+    {
+      ed_public_key.verify_strict(&message_bytes, &ed_signature).unwrap();
+    
+      println!("Signature Verification Success");
+    } else {
+      println!("Signature Verification Failed");
+    }
+  } else {
+    println!("Signature Verification Failed");
+  }
 }

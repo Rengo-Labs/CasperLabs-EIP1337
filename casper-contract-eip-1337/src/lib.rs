@@ -19,18 +19,21 @@ use hashes::Hashes;
 /// Enum for ContractError, It represents codes for different smart contract errors.
 #[derive(Debug)]
 pub enum ContractError {
-
-    /// 65,535 for hash exists
+    /// 17 for signature verification error
+    SignatureVerificationFailed = 17,
+    /// 18 for invalid signature
+    InvalidSignature = 18,
+    /// 19 for hash exists
     HashExists = 19,
-    /// 65,536 for signer verification failed
+    /// 20 for signer verification failed
     SignerFailed = 20,
-    /// 65,537 for somehow missing public_key
+    /// 21 for somehow missing public_key
     MissingPublicKey = 21,
-    /// 65,538 for blocktime less than nextvalidtimestamp
+    /// 22 or blocktime less than nextvalidtimestamp
     InvalidBlockTime = 22, 
-    /// 65,539 for allowance is less than token_amount
+    /// 23 for allowance is less than token_amount
     InsufficientAllowance = 23, 
-    /// 65,540 for subcription not active
+    /// 24 for subcription not active
     SubscriptionNotActive = 24,      
 
     ReadingCallerError = 25,
@@ -247,9 +250,9 @@ pub fn cancel_subscription()
             let subscription_hash_bytes: [u8;32] = get_subscription_hash_bytes(data);
             let mut sig_bytes = [0u8;64];
             
-            hex::decode_to_slice(signature, &mut sig_bytes as &mut [u8]).unwrap();
+            hex::decode_to_slice(signature, &mut sig_bytes as &mut [u8]).unwrap_or_default();
 
-            let sig = Signature::ed25519(sig_bytes).unwrap();
+            let sig = Signature::ed25519(sig_bytes).unwrap_or_else(| x| runtime::revert(ApiError::User(ContractError::InvalidSignature as u16)));
 
             let result:bool = get_subscription_signer_and_verification(public_key,sig,subscription_hash_bytes);
 
@@ -299,9 +302,9 @@ pub fn is_subscription_ready()
             let subscription_hash_bytes: [u8;32] = get_subscription_hash_bytes(data);
             let mut sig_bytes = [0u8;64];
             
-            hex::decode_to_slice(signature, &mut sig_bytes as &mut [u8]).unwrap();
+            hex::decode_to_slice(signature, &mut sig_bytes as &mut [u8]).unwrap_or_default();
 
-            let sig = Signature::ed25519(sig_bytes).unwrap();
+            let sig = Signature::ed25519(sig_bytes).unwrap_or_else(| x| runtime::revert(ApiError::User(ContractError::InvalidSignature as u16)));
 
             let result:bool = get_subscription_signer_and_verification(public_key,sig,subscription_hash_bytes);
 
@@ -378,9 +381,9 @@ pub fn execute_subscription()
             let subscription_hash_bytes: [u8;32] = get_subscription_hash_bytes(data);
             let mut sig_bytes = [0u8;64];
 
-            hex::decode_to_slice(signature, &mut sig_bytes as &mut [u8]).unwrap();
+            hex::decode_to_slice(signature, &mut sig_bytes as &mut [u8]).unwrap_or_default();
 
-            let sig = Signature::ed25519(sig_bytes).unwrap();
+            let sig = Signature::ed25519(sig_bytes).unwrap_or_else(| x| runtime::revert(ApiError::User(ContractError::InvalidSignature as u16)));
 
             let result:bool = get_subscription_signer_and_verification(public_key,sig,subscription_hash_bytes);
 
@@ -402,7 +405,7 @@ pub fn execute_subscription()
                     utils::set_key(&next_valid_timestamp_key, next_valid_timestamp);
 
                     let contract_hash_string: String = utils::get_key(constants::ERC20_CONTRACT_HASH).unwrap_or_revert();
-                    let contract_hash = ContractHash::from_formatted_str(&contract_hash_string).unwrap();
+                    let contract_hash = ContractHash::from_formatted_str(&contract_hash_string).unwrap_or_default();
                     
                     let transfer_from_result: () = runtime::call_contract(
                         contract_hash,
