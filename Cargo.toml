@@ -2,6 +2,7 @@
 
 members = [
   "casper-contract-eip-1337",
+  "subscription_hash_signer",
   "tests"
 ]
 

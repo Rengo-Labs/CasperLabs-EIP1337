@@ -4,6 +4,11 @@ prepare:
 build-contract:
 	cargo build --release -p casper-contract-eip-1337 --target wasm32-unknown-unknown
 
+build-signer:
+	cargo build --release -p subscription_hash_signer
+	mkdir -p bin
+	cp target/release/subscription_hash_signer bin 
+
 test-only:
 	cargo test -p tests
 
@@ -26,3 +31,4 @@ lint: clippy
 clean:
 	cargo clean
 	rm tests/wasm/*
+	rm bin/*

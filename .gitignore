@@ -3,4 +3,5 @@ Cargo.lock
 tests/wasm/*.wasm
 .vscode
 .cargo
-contract-keys
+contract-key
+bin
