@@ -34,6 +34,11 @@ $ make prepare
 $ make build-contract
 ```
 
+### Build The Signer Utility
+```bash
+$ make build-signer
+```
+
 ### Test
 Test logic and smart contract.
 ```bash
@@ -53,11 +58,11 @@ In this example, we will deploy to testnet.
 casper-client put-deploy \
   --chain-name casper-test \
   --node-address <NODE_ADDRESS> \
-  --secret-key contract-keys/secret_key.pem \
+  --secret-key <CONTRACT_SECRET_KEY_FILE> \
   --session-path target/wasm32-unknown-unknown/release/contract.wasm \
-  --payment-amount 13500000000 \
+  --payment-amount 400000000000 \
   --session-arg="to:account_hash='<YOUR_RECEIVING_ACCOUNT_HASH>'" \
-  --session-arg="token_amount:U256='<AMOUNT>'" \
+  --session-arg="token_amount:U256='<SUBSCRIPTION_AMOUNT>'" \
   --session-arg="period_seconds:u64='<PERIOD_SECONDS>'" \
   --session-arg="erc20_contract_hash:string='<ERC20_CONTRACT_ADDRESS>" \
   /
@@ -85,11 +90,157 @@ https://testnet.cspr.live/deploy/<DEPLOY_HASH>
 
 ### Allow the Contract Access to the Sender's ERC20 Balance
 
+First get the latest state hash.
 
+```bash
+casper-client get-state-root-hash --node-address <NODE_ADDRESS> | jq -r
+```
+
+The return value will look something like this.
+
+```bash
+dde389e00bc1b533bad9ae1d70fc50f8fc7b76670a7fb4b8f0ff47b9218bd1ad
+```
+
+Second, get the account ERC20 account's information.
+
+```bash
+casper-client query-state --node-address <NODE_ADDRESS> -k <ERC_CONTRACT_PUBLIC_KEY_HEX> -s <STATE_HASH>
+```
+
+Third, get the ERC-20 contract session-hash which looks like this.
+
+```json
+  ...
+    "named_keys": [
+      {
+        "key": "hash-696e6e9f03320606ebd62003145eb74d7683e245cc62b94fabe1174c10671abe",
+        "name": "erc20_token_contract"
+      }
+    ]
+  ...
+```
+
+Set up the allowance so that the EIP-1337 subscription contract can spend on behalf of the sender.
+
+```bash
+casper-client put-deploy \
+  --chain-name casper-test \
+  --node-address <NODE_ADDRESS> \
+  --secret-key <SENDER_SECRET_KEY_FILE> \
+  --payment-amount 100000000000 \
+  --session-hash=<ERC20_CONTRACT_SESSION_HASH> \
+  --session-entry-point="approve" \
+  --session-arg="spender:key='<EIP_1337_CONTRACT_HASH>'" \
+  --session-arg="amount:u256='<SUBSCRIPTION_AMOUNT>'" \
+```
+
+After the deploy successfully deploys, get the latest state-root-hash and check the allowance.
+
+```bash
+casper-client get-state-root-hash --node-address <NODE_ADDRESS> | jq -r
+```
+
+Get the balance key using the script.
+
+```bash
+./scripts/base64_key.sh <SENDER_PUBLIC_KEY>
+```
+
+Query to double check that the allowance is set correctly.
+
+```bash
+casper-client get-dictionary-item -s <STATE_HASH>
+ --dictionary-name allowances --contract-hash <ERC20_CONTRACT_SESSION_HASH> --node-address <NODE_ADDRESS> --dictionary-item-key <BASE64_KEY>
+```
+
+### Generate the subscription hash as the sender
+
+First, get the sender account hash.
+
+```bash
+casper-client account-address <SENDER_PUBLIC_KEY_FILE>
+```
+
+Second, create the subscription hash.
+
+```bash
+casper-client put-deploy \
+  --chain-name casper-test \
+  --node-address <NODE_ADDRESS> \
+  --secret-key <SENDER_SECRET_KEY_FILE> \
+  --payment-amount 10000000000 \
+  --session-hash="<EIP_1337_CONTRACT_SESSION_HASH>" \
+  --session-entry-point="create_subscription_hash" \
+  --session-arg="public:public_key='<SENDER_PUBLIC_KEY_HEX>'" \
+  --session-arg="from:account_hash='<SENDER_ACCOUNT_ADDRESS>'" \
+```
+
+Third, after the deploy is completed, get the latest state hash.
+
+```bash
+casper-client get-state-root-hash --node-address <NODE_ADDRESS> | jq -r
+```
+
+Fourth, get the hash from the EIP-1337 `hashes` dictionary.
+
+```bash
+casper-client get-dictionary-item -s <STATE_HASH> \
+  --contract-hash <EIP_1337_CONTRACT_SESSION_HASH> \
+  --node-address <NODE_ADDRESS> \
+  --dictionary-name hashes \
+  --dictionary-item-key <SENDER_ACCOUNT_ADDRESS (minus account-hash)> \
+```
+
+### Sign the subscription hash as the sender
+
+Build and run the signer utility on the subscription hash.
+
+```bash
+./bin/subscription_hash_signer <SENDER_SECRET_KEY_FILE> <SUBSCRIPTION_HASH>
+```
+
+Issue this signed subscription hash to the entity that is in charge of causing the subscription (usually the receiver).  It will be checked against the internally registered public key to issue a payment.
+
+### Execute the subscription payment
+
+Execute the subscription using the signed subscription hash.
+
+```
+casper-client put-deploy \
+  --chain-name casper-test \
+  --node-address <NODE_ADDRESS> \
+  --secret-key <RECEIVER_SECRET_KEY_FILE> \
+  --payment-amount 10000000000 \
+  --session-hash="<EIP_1337_CONTRACT_SESSION_HASH>" \
+  --session-entry-point="execute_subscription" \
+  --session-arg="signature:string='<SIGNED_SUBSCRIPTION_HASH>'" \
+  --session-arg="from:account_hash='<SENDER_ACCOUNT_HASH>'" \
+
+```
+
+Once a payment is executed, the timestamp will be internally updated to restrict payments until that time if there are still funds left to be transferred.  If an insufficient approved amount exists in the referenced ERC-20, then this function will fail.
+
+### Cancel the subscription
+
+Cancel the subscription using the signed subscription hash.
+
+```
+casper-client put-deploy \
+  --chain-name casper-test \
+  --node-address <NODE_ADDRESS> \
+  --secret-key <RECEIVER_SECRET_KEY_FILE> \
+  --payment-amount 10000000000 \
+  --session-hash="<EIP_1337_CONTRACT_SESSION_HASH>" \
+  --session-entry-point="cancel_subscription" \
+  --session-arg="signature:string='<SIGNED_SUBSCRIPTION_HASH>'" \
+  --session-arg="from:account_hash='<SENDER_ACCOUNT_HASH>'" \
+
+```
 
 ## Entry Point methods 
 
-Following are the eip1337's entry point methods.
+Following are the EIP-1337 entry point methods.
 
 - #### is_subscription_active 
 
@@ -106,40 +257,40 @@ grace_period_seconds | u64
 This method **returns** nothing.
 
 - #### get_subscription_hash 
-Given the subscription details, generate eip-191 standard hash, external interface.
-
-Following is the table of parameters.
-
-Parameter Name | Type
----|---
-from | AccountHash
-
-This method **returns** eip-191 standard hash.
-
-
-- #### create_subscription_hash 
-Given the subscription details, generate eip-191 standard hash, external interface, do not return (use this until text is fixed).
-
-
-Following is the table of parameters.
-
-Parameter Name | Type
----|---
-from | AccountHash
-
-This method **returns** nothing.
-
-- #### cancel_subscription 
-
-You don't really need this if you are using the approve/transferFrom method
-because you control the flow of tokens by approving this contract address,
-but to make the contract an extensible example for later user I'll add this.
+Given the subscription details, generate blake2b standard hash or get it if it has been generated, external interface. This function stores the hash and public key into the the `hashes` and `pubkey` dictionaries under the `from` account hash (`account-hash` prefix stripped).
 
 Following is the table of parameters.
 
 Parameter Name | Type
 ---|---
 public | PublicKey
+from | AccountHash
+
+This method **returns** blake2b standard hash.
+
+- #### create_subscription_hash 
+
+Given the subscription details, generate blake2b standard hash, external interface, do not return.  This function stores the hash and public key into the the `hashes` and `pubkey` dictionaries under the `from` account hash (`account-hash` prefix stripped).
+
+Following is the table of parameters.
+
+Parameter Name | Type
+---|---
+public | PublicKey
+from | AccountHash
+
+This method **returns** nothing.  `get_subscription_hash` is the version that returns the created hash (or stored hash if it exists) and should be used when calling from another contract. 
+
+
+- #### cancel_subscription 
+
+You don't really need this if you are using the approve/transferFrom method
+because you control the flow of tokens by approving this contract address, but use this to cancel the subscription using just the contract.
+
+Following is the table of parameters.
+
+Parameter Name | Type
+---|---
 signature | string 
 from | AccountHash
 
@@ -155,7 +306,6 @@ Following is the table of parameters.
 
 Parameter Name | Type
 ---|---
-public | PublicKey
 signature | string 
 from | AccountHash
 
@@ -172,75 +322,8 @@ Following is the table of parameters.
 
 Parameter Name | Type
 ---|---
-public | PublicKey
 signature | string 
 from | AccountHash
 
-
 This method **returns** nothing.
 
-
-# How to Deploy and call functions of the eip 1337 contract
-
-```bash
-Read commandsfordeployment file in the root directory of eip 1337 project 
-```
-
-### Generate and Sign a Subscription Hash
-
-Use the contract to generate a subscription hash:
-
-```bash
-```
-
-### 
-
-
-
-
-# ExecuteSubscription Flow (A deep explanation)
-
-```bash
-
-Steps:
-
-Note: You first have to deploy casper-Erc20 (version= "0.2.0") to call executesubcription method of casper-eip1337 
-(Because, you first have to approve publisher accounthash for funds transfer).  
-
-1) Setup casper from this document (https://docs.google.com/document/d/17bC-iNOZ7sf-oinQxnbPzuQ4P8Dtid-5-WoYfzp6hi4/edit?usp=sharing) 
-
-2) All the important casper commands are in commandsfordeploymenty file.
-
-3) Now that your casper environment is setup and you know how to do deployment and query the contract, Clone casper-Erc20 (version= "0.2.0") project and make keys in the root directory using casper-client keygen keys.
-
-4) Import your key in casper signer wallet in google chrome. 
-
-5) Get faucet from casper live -> Tools tab -> faucet tab.
-
-6) Deploy erc20 contract using command no 1 in commandsfordeployment file (edit the command for erc20 arguments).
-
-7) Make Keys in the root directory of eip1337 project using casper-client keygen keys.
-
-8) Repeat step no 4 and 5.
-
-9) Deploy approve method of erc20 and provide accounthash of the spender in argument (spender) and a large value in argument (amount).
-Note: You have to get the latest state-root-hash and then erc20 hash see command no 3,4 and 5 in commandsfordeployment file (edit them according to your needs)
- 
-10) Deploy eip1337 using command no 1 in commandsfordeployment file (edit the command (like argument values) if you want to).
-Note:(provide the erc20 contract hash you get in step no 6 in string)
-
-11) You can check the status of deployment using command no 2 in commandsfordeployment file (edit the command with new deploy hash).
-
-12) Provide same data you provided when deploying eip1337, in sign meta transaction rust project (you can clone it from the branch name sign meta transaction).
-
-13) Retrieve Public Key and Signature from sign meta transaction rust project.
-
-14) Now you have all three arguments for execute_subscription method (Publickey (pass as string " "), signature (pass as string " ") and from), deploy the method using command no 6 in commandsfordeployment file (edit the command if required).
-
-15) Use command no 2 from commandsfordeployment file for deployment status(edit the command with new deploy hash).
-
-16) Now you can query the state and check the results using command no 5 in commandsfordeployment file (edit the command with new state-root-hash and eip1337 hash).
-
-17) You can query all the keys changing the keys at the end of the command used in command 6 in commandsfordeployment file.  
-
-```
