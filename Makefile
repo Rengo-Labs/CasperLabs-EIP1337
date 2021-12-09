@@ -31,5 +31,5 @@ lint: clippy
 	
 clean:
 	cargo clean
-	rm tests/wasm/*
-	rm bin/*
+	rm -f tests/wasm/*
+	rm -f bin/*

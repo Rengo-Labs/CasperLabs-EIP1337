@@ -62,9 +62,9 @@ casper-client put-deploy \
   --session-path target/wasm32-unknown-unknown/release/contract.wasm \
   --payment-amount 400000000000 \
   --session-arg="to:account_hash='<YOUR_RECEIVING_ACCOUNT_HASH>'" \
-  --session-arg="token_amount:U256='<SUBSCRIPTION_AMOUNT>'" \
+  --session-arg="token_amount:u256='<SUBSCRIPTION_AMOUNT>'" \
   --session-arg="period_seconds:u64='<PERIOD_SECONDS>'" \
-  --session-arg="erc20_contract_hash:string='<ERC20_CONTRACT_ADDRESS>" \
+  --session-arg="erc20_contract_hash:key='<ERC20_CONTRACT_HASH>" \
   /
 ```
 
@@ -129,7 +129,7 @@ casper-client put-deploy \
   --node-address <NODE_ADDRESS> \
   --secret-key <SENDER_SECRET_KEY_FILE> \
   --payment-amount 100000000000 \
-  --session-hash=<ERC20_CONTRACT_SESSION_HASH> \
+  --session-hash=<ERC20_CONTRACT_HASH> \
   --session-entry-point="approve" \
   --session-arg="spender:key='<EIP_1337_CONTRACT_HASH>'" \
   --session-arg="amount:u256='<SUBSCRIPTION_AMOUNT>'" \
@@ -151,7 +151,7 @@ Query to double check that the allowance is set correctly.
 
 ```bash
 casper-client get-dictionary-item -s <STATE_HASH>
- --dictionary-name allowances --contract-hash <ERC20_CONTRACT_SESSION_HASH> --node-address <NODE_ADDRESS> --dictionary-item-key <BASE64_KEY>
+ --dictionary-name allowances --contract-hash <ERC20_CONTRACT_HASH> --node-address <NODE_ADDRESS> --dictionary-item-key <BASE64_KEY>
 ```
 
 ### Generate the subscription hash as the sender
@@ -170,7 +170,7 @@ casper-client put-deploy \
   --node-address <NODE_ADDRESS> \
   --secret-key <SENDER_SECRET_KEY_FILE> \
   --payment-amount 10000000000 \
-  --session-hash="<EIP_1337_CONTRACT_SESSION_HASH>" \
+  --session-hash="<EIP_1337_CONTRACT_HASH>" \
   --session-entry-point="create_subscription_hash" \
   --session-arg="public:public_key='<SENDER_PUBLIC_KEY_HEX>'" \
   --session-arg="from:account_hash='<SENDER_ACCOUNT_ADDRESS>'" \
@@ -186,7 +186,7 @@ Fourth, get the hash from the EIP-1337 `hashes` dictionary.
 
 ```bash
 casper-client get-dictionary-item -s <STATE_HASH> \
-  --contract-hash <EIP_1337_CONTRACT_SESSION_HASH> \
+  --contract-hash <EIP_1337_CONTRACT_HASH> \
   --node-address <NODE_ADDRESS> \
   --dictionary-name hashes \
   --dictionary-item-key <SENDER_ACCOUNT_ADDRESS (minus account-hash)> \
@@ -212,7 +212,7 @@ casper-client put-deploy \
   --node-address <NODE_ADDRESS> \
   --secret-key <RECEIVER_SECRET_KEY_FILE> \
   --payment-amount 10000000000 \
-  --session-hash="<EIP_1337_CONTRACT_SESSION_HASH>" \
+  --session-hash="<EIP_1337_CONTRACT_HASH>" \
   --session-entry-point="execute_subscription" \
   --session-arg="signature:string='<SIGNED_SUBSCRIPTION_HASH>'" \
   --session-arg="from:account_hash='<SENDER_ACCOUNT_HASH>'" \
@@ -231,7 +231,7 @@ casper-client put-deploy \
   --node-address <NODE_ADDRESS> \
   --secret-key <RECEIVER_SECRET_KEY_FILE> \
   --payment-amount 10000000000 \
-  --session-hash="<EIP_1337_CONTRACT_SESSION_HASH>" \
+  --session-hash="<EIP_1337_CONTRACT_HASH>" \
   --session-entry-point="cancel_subscription" \
   --session-arg="signature:string='<SIGNED_SUBSCRIPTION_HASH>'" \
   --session-arg="from:account_hash='<SENDER_ACCOUNT_HASH>'" \

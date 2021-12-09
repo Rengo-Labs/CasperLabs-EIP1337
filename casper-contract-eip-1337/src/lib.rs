@@ -404,7 +404,7 @@ pub fn execute_subscription()
                     utils::set_key(&next_valid_timestamp_key, next_valid_timestamp);
 
                     let contract_hash: ContractHash = utils::get_key(constants::ERC20_CONTRACT_HASH).unwrap_or_revert();
-                    
+                
                     let transfer_from_result: () = runtime::call_contract(
                         contract_hash,
                         "transfer_from",
@@ -516,7 +516,7 @@ pub fn install_or_upgrade_contract(
     to: AccountHash,
     token_amount: U256,
     period_seconds: u64,
-    erc20_contract_hash: ContractHash,
+    erc20_contract_hash: Key,
 ) {
     let mut named_keys: NamedKeys = Default::default();
     let contract_package_hash: ContractPackageHash =
@@ -545,7 +545,10 @@ pub fn install_or_upgrade_contract(
                 named_keys.insert(constants::TO.to_string(), storage::new_uref(to).into());
                 named_keys.insert(constants::TOKEN_AMOUNT.to_string(), storage::new_uref(token_amount).into());
                 named_keys.insert(constants::PERIOD_SECONDS.to_string(), storage::new_uref(period_seconds).into());
-                named_keys.insert(constants::ERC20_CONTRACT_HASH.to_string(), storage::new_uref(erc20_contract_hash).into());
+
+                // Coerce Contract Hash
+                let _erc20_contract_hash: ContractHash = ContractHash::from(erc20_contract_hash.into_hash().unwrap_or_default());
+                named_keys.insert(constants::ERC20_CONTRACT_HASH.to_string(), storage::new_uref(_erc20_contract_hash).into());
 
                 // Add empty dictionary for hashes.
                 let hashes_dict = storage::new_dictionary(hashes::HASHES_DICT).unwrap_or_revert();

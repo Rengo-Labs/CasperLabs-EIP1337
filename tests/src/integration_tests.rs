@@ -9,7 +9,9 @@ mod tests {
     use types::{CLTyped, ContractHash, ContractPackageHash, Key, PublicKey, RuntimeArgs, SecretKey, U256, U512, account::AccountHash, bytesrepr::{
             FromBytes, 
             ToBytes
-        }, runtime_args};
+        }, 
+        runtime_args
+    };
 
     use erc20::{
         constants::{
@@ -173,7 +175,7 @@ mod tests {
                 TO => user_addr_2,
                 TOKEN_AMOUNT => U256::from(TOKEN_AMOUNT_VALUE),
                 PERIOD_SECONDS => period_seconds,
-                ERC20_CONTRACT_HASH => erc_20_contract_hash,
+                ERC20_CONTRACT_HASH => Key::Hash(erc_20_contract_hash.value()),
             };
 
             let session = SessionBuilder::new(session_code, session_args)
@@ -595,7 +597,6 @@ mod tests {
             signature, 
             user_from,
         );
-
     }
 
     // Insufficient allowance
