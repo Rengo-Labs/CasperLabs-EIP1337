@@ -173,7 +173,7 @@ mod tests {
                 TO => user_addr_2,
                 TOKEN_AMOUNT => U256::from(TOKEN_AMOUNT_VALUE),
                 PERIOD_SECONDS => period_seconds,
-                ERC20_CONTRACT_HASH => erc_20_contract_hash.to_formatted_string(),
+                ERC20_CONTRACT_HASH => erc_20_contract_hash,
             };
 
             let session = SessionBuilder::new(session_code, session_args)

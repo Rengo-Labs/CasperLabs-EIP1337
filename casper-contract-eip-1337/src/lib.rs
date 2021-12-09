@@ -318,8 +318,7 @@ pub fn is_subscription_ready()
                 
                 if blocktime >= next_valid_timestamp
                 {
-                    let contract_hash_string: String = utils::get_key(constants::ERC20_CONTRACT_HASH).unwrap_or_revert();
-                    let contract_hash = ContractHash::from_formatted_str(&contract_hash_string).unwrap_or_default();
+                    let contract_hash: ContractHash = utils::get_key(constants::ERC20_CONTRACT_HASH).unwrap_or_revert();
                 
                     let allowance_result:U256=runtime::call_contract(
                         contract_hash,
@@ -404,8 +403,7 @@ pub fn execute_subscription()
                     next_valid_timestamp=next_valid_timestamp+(period_seconds*1000);
                     utils::set_key(&next_valid_timestamp_key, next_valid_timestamp);
 
-                    let contract_hash_string: String = utils::get_key(constants::ERC20_CONTRACT_HASH).unwrap_or_revert();
-                    let contract_hash = ContractHash::from_formatted_str(&contract_hash_string).unwrap_or_default();
+                    let contract_hash: ContractHash = utils::get_key(constants::ERC20_CONTRACT_HASH).unwrap_or_revert();
                     
                     let transfer_from_result: () = runtime::call_contract(
                         contract_hash,
@@ -518,7 +516,7 @@ pub fn install_or_upgrade_contract(
     to: AccountHash,
     token_amount: U256,
     period_seconds: u64,
-    erc20_contract_hash: String,
+    erc20_contract_hash: ContractHash,
 ) {
     let mut named_keys: NamedKeys = Default::default();
     let contract_package_hash: ContractPackageHash =
@@ -574,6 +572,7 @@ pub fn install_or_upgrade_contract(
         &format!("{}-latest-version-contract", name),
         contract_hash.into(),
     );
+    
 
     runtime::put_key(
         &format!("{}-latest-version-contract-hash", name),
