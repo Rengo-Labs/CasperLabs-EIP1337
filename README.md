@@ -131,11 +131,11 @@ casper-client put-deploy \
   --payment-amount 100000000000 \
   --session-hash=<ERC20_CONTRACT_HASH> \
   --session-entry-point="approve" \
-  --session-arg="spender:key='<EIP_1337_CONTRACT_HASH>'" \
+  --session-arg="spender:key='<EIP_1337_CONTRACT_PACKAGE_HASH>'" \
   --session-arg="amount:u256='<SUBSCRIPTION_AMOUNT>'" \
 ```
 
-After the deploy successfully deploys, get the latest state-root-hash and check the allowance.
+This authorizes the contract-package-hash (contract-hash changes when upgrades, the contract-package-hash does not) to spend some amount on behalf of the sender. After the deploy successfully deploys, get the latest state-root-hash and check the allowance.
 
 ```bash
 casper-client get-state-root-hash --node-address <NODE_ADDRESS> | jq -r
@@ -316,7 +316,7 @@ This method **returns** nothing.
 - #### execute_subscription 
 
 Execute the transferFrom to pay the publisher from the subscriber, 
-the subscriber has full control by approving this contract hash an allowance.
+the subscriber has full control by approving this contract-package-hash an allowance.
 
 Following is the table of parameters.
 
