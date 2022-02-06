@@ -575,7 +575,6 @@ pub fn install_or_upgrade_contract(
         &format!("{}-latest-version-contract", name),
         contract_hash.into(),
     );
-    
 
     runtime::put_key(
         &format!("{}-latest-version-contract-hash", name),
