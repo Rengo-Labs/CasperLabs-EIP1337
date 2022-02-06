@@ -14,14 +14,16 @@ Finally, sign the subscription hash with the private key of your receiving accou
 
 1. Install the [rust environment and casper client](https://docs.casperlabs.io/en/latest/.dapp-dev-guide/setup-of-rust-contract-sdk.html)
 
-2. Clone this repo and navigate into the folder.
+2. Install [wasm-strip](https://command-not-found.com/wasm-strip)
+
+3. Clone this repo and navigate into the folder.
   ```bash
   $ git clone https://github.com/davidtai/casper-eip-1337.git
   ```
 
-3. The address of the ERC20 compatible contract that you want to use.
+4. The address of the ERC20 compatible contract that you want to use.
 
-4. A receiving Casper account.  An easy way to set one up is using the [Casperlabs Signer](https://docs.cspr.community/docs/user-guides/SignerGuide.html).
+5. A receiving Casper account.  An easy way to set one up is using the [Casperlabs Signer](https://docs.cspr.community/docs/user-guides/SignerGuide.html).
 
 ### Set up the Rust toolchain
 You need the Rust toolchain to develop smart contracts. Make sure `wasm32-unknown-unknown` is installed.
