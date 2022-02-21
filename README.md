@@ -21,7 +21,7 @@ Finally, sign the subscription hash with the private key of your receiving accou
   $ git clone https://github.com/davidtai/casper-eip-1337.git
   ```
 
-4. The address of the ERC20 compatible contract that you want to use.
+4. The address of the ERC20 compatible contract that you want to use. Use the example one [here](https://github.com/casper-ecosystem/erc20/blob/master/example/erc20-token/src/main.rs) for testing.
 
 5. A receiving Casper account.  An easy way to set one up is using the [Casperlabs Signer](https://docs.cspr.community/docs/user-guides/SignerGuide.html).
 
@@ -59,7 +59,7 @@ In this example, we will deploy to testnet.
 ```bash
 casper-client put-deploy \
   --chain-name casper-test \
-  --node-address <NODE_ADDRESS> \
+  --node-address <HOST:PORT> \
   --secret-key <CONTRACT_SECRET_KEY_FILE> \
   --session-path target/wasm32-unknown-unknown/release/contract.wasm \
   --payment-amount 400000000000 \
@@ -67,7 +67,6 @@ casper-client put-deploy \
   --session-arg="token_amount:u256='<SUBSCRIPTION_AMOUNT>'" \
   --session-arg="period_seconds:u64='<PERIOD_SECONDS>'" \
   --session-arg="erc20_contract_hash:key='<ERC20_CONTRACT_HASH>" \
-  /
 ```
 
 A successful response will look like:
@@ -95,7 +94,7 @@ https://testnet.cspr.live/deploy/<DEPLOY_HASH>
 First get the latest state hash.
 
 ```bash
-casper-client get-state-root-hash --node-address <NODE_ADDRESS> | jq -r
+casper-client get-state-root-hash --node-address <HOST:PORT> | jq -r
 ```
 
 The return value will look something like this.
@@ -107,7 +106,7 @@ dde389e00bc1b533bad9ae1d70fc50f8fc7b76670a7fb4b8f0ff47b9218bd1ad
 Second, get the account ERC20 account's information.
 
 ```bash
-casper-client query-state --node-address <NODE_ADDRESS> -k <ERC_CONTRACT_PUBLIC_KEY_HEX> -s <STATE_HASH>
+casper-client query-state --node-address <HOST:PORT> -k <ERC_CONTRACT_PUBLIC_KEY_HEX> -s <STATE_HASH>
 ```
 
 Third, get the ERC-20 contract session-hash which looks like this.
@@ -128,7 +127,7 @@ Set up the allowance so that the EIP-1337 subscription contract can spend on beh
 ```bash
 casper-client put-deploy \
   --chain-name casper-test \
-  --node-address <NODE_ADDRESS> \
+  --node-address <HOST:PORT> \
   --secret-key <SENDER_SECRET_KEY_FILE> \
   --payment-amount 100000000000 \
   --session-hash=<ERC20_CONTRACT_HASH> \
@@ -140,7 +139,7 @@ casper-client put-deploy \
 This authorizes the contract-package-hash (contract-hash changes when upgrades, the contract-package-hash does not) to spend some amount on behalf of the sender. After the deploy successfully deploys, get the latest state-root-hash and check the allowance.
 
 ```bash
-casper-client get-state-root-hash --node-address <NODE_ADDRESS> | jq -r
+casper-client get-state-root-hash --node-address <HOST:PORT> | jq -r
 ```
 
 Get the balance key using the script.
@@ -153,7 +152,7 @@ Query to double check that the allowance is set correctly.
 
 ```bash
 casper-client get-dictionary-item -s <STATE_HASH>
- --dictionary-name allowances --contract-hash <ERC20_CONTRACT_HASH> --node-address <NODE_ADDRESS> --dictionary-item-key <BASE64_KEY>
+ --dictionary-name allowances --contract-hash <ERC20_CONTRACT_HASH> --node-address <HOST:PORT> --dictionary-item-key <BASE64_KEY>
 ```
 
 ### Generate the subscription hash as the sender
@@ -169,7 +168,7 @@ Second, create the subscription hash.
 ```bash
 casper-client put-deploy \
   --chain-name casper-test \
-  --node-address <NODE_ADDRESS> \
+  --node-address <HOST:PORT> \
   --secret-key <SENDER_SECRET_KEY_FILE> \
   --payment-amount 10000000000 \
   --session-hash="<EIP_1337_CONTRACT_HASH>" \
@@ -181,7 +180,7 @@ casper-client put-deploy \
 Third, after the deploy is completed, get the latest state hash.
 
 ```bash
-casper-client get-state-root-hash --node-address <NODE_ADDRESS> | jq -r
+casper-client get-state-root-hash --node-address <HOST:PORT> | jq -r
 ```
 
 Fourth, get the hash from the EIP-1337 `hashes` dictionary.
@@ -189,7 +188,7 @@ Fourth, get the hash from the EIP-1337 `hashes` dictionary.
 ```bash
 casper-client get-dictionary-item -s <STATE_HASH> \
   --contract-hash <EIP_1337_CONTRACT_HASH> \
-  --node-address <NODE_ADDRESS> \
+  --node-address <HOST:PORT> \
   --dictionary-name hashes \
   --dictionary-item-key <SENDER_ACCOUNT_ADDRESS (minus account-hash)> \
 ```
@@ -211,7 +210,7 @@ Execute the subscription using the signed subscription hash.
 ```
 casper-client put-deploy \
   --chain-name casper-test \
-  --node-address <NODE_ADDRESS> \
+  --node-address <HOST:PORT> \
   --secret-key <RECEIVER_SECRET_KEY_FILE> \
   --payment-amount 10000000000 \
   --session-hash="<EIP_1337_CONTRACT_HASH>" \
@@ -230,7 +229,7 @@ Cancel the subscription using the signed subscription hash.
 ```
 casper-client put-deploy \
   --chain-name casper-test \
-  --node-address <NODE_ADDRESS> \
+  --node-address <HOST:PORT> \
   --secret-key <RECEIVER_SECRET_KEY_FILE> \
   --payment-amount 10000000000 \
   --session-hash="<EIP_1337_CONTRACT_HASH>" \
