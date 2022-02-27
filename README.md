@@ -136,7 +136,7 @@ casper-client put-deploy \
   --session-arg="amount:u256='<SUBSCRIPTION_AMOUNT>'" \
 ```
 
-This authorizes the contract-package-hash (contract-hash changes when upgrades, the contract-package-hash does not) to spend some amount on behalf of the sender. After the deploy successfully deploys, get the latest state-root-hash and check the allowance.
+This authorizes the contract-package-hash (contract-hash changes when upgrades, the contract-package-hash does not) to spend some amount on behalf of the sender. After the deploy successfully deploys, get the latest state-root-hash and check the balance to make sure the account has something to send.
 
 ```bash
 casper-client get-state-root-hash --node-address <HOST:PORT> | jq -r
@@ -148,11 +148,11 @@ Get the balance key using the script.
 ./scripts/base64_key.sh <SENDER_PUBLIC_KEY>
 ```
 
-Query to double check that the allowance is set correctly.
+Query to double check that the balances is set correctly.
 
 ```bash
 casper-client get-dictionary-item -s <STATE_HASH>
- --dictionary-name allowances --contract-hash <ERC20_CONTRACT_HASH> --node-address <HOST:PORT> --dictionary-item-key <BASE64_KEY>
+ --dictionary-name balances --contract-hash <ERC20_CONTRACT_HASH> --node-address <HOST:PORT> --dictionary-item-key <BASE64_KEY>
 ```
 
 ### Generate the subscription hash as the sender
