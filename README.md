@@ -4,7 +4,7 @@ EIP 1337 subscription billing standard implemented for the Casper Blockchain.
 
 First, [deploy this contract](#deploy-onto-casper) by providing an [ERC20](https://github.com/casper-ecosystem/erc20) contract address, your receiving account address, token amount, and subscription period.  
 
-Then, have the sending user permit this contract to transfer tokens on their behalf up to the total amount agreed upon and [generate a subscription hash](#getting-a-subscription-hash) to send you.  
+Then, have the sending user permit this contract to transfer tokens on their behalf up to the total amount agreed upon and [generate a subscription hash](#generate-the-subscription-hash-as-the-sender) to send you.  
 
 Finally, sign the subscription hash with the private key of your receiving account and call [execute-subscription](#getting-paid) after the allotted subscription period has passed until the total amount of tokens is transferred.
 
